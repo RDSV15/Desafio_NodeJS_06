@@ -6,6 +6,7 @@ import * as dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import { userInfo } from "os";
 
 dotenv.config();
 
@@ -40,41 +41,62 @@ app.listen(PORT, async () => {
 	// CÓDIGO PARA ATENDER OS REQUERIMENTOS
 	// R01, R02, R03, R04, R05
 	
-	const { Sequelize } = require('sequelize');
-
-	const sequelize = new Sequelize({
-		dialect: 'sqlite',
-		storage: 'path/to/database.sqlite'
-	});
-
 	const readline = require('readline');
 		const leitor = readline.createInterface({
     	input: process.stdin,
     	output: process.stdout
 	});
 
-	const DAO: any[] = [];
+	const alunos: any[] = [];
 
 	leitor.question('Digite a quantidade de alunos: ', async (quantidade: number) => {
     	for(let i = 0; i < quantidade; i++) {
         	
        	 	await new Promise((resolve) => { 
             	leitor.question(`Digite o seu nome ${i}: `, (nome: any) => {
-                	resolve(DAO.push(nome)); 
+                	resolve(alunos.push(nome)); 
 					
             	});
         	});
 		}
 		leitor.close();
-    	console.log(DAO);
+    	console.log(alunos);
 		
 	});
-	
-	try {
-		await sequelize.authenticate();
-		console.log('Connection has been established successfully.');
-	  } catch (error) {
-		console.error('Unable to connect to the database:', error);
-	  }
 
+	const { Sequelize, DataTypes, Model } = require('sequelize');
+	const sequelize = new Sequelize('sqlite::memory:');
+
+	class lista extends Model {}
+
+	lista.init({
+  		// Model attributes are defined here
+  		firstName: { 
+			alunos,
+    	type: DataTypes.STRING,
+    	allowNull: false
+  		},
+	}, 
+	{
+  		// Other model options go here
+  		sequelize, // We need to pass the connection instance
+  		modelName: 'lista' // We need to choose the model name
+	});
+
+	// the defined model is the class itself
+	console.log(lista === sequelize.models.lista); // true
+	
+	sequelize.define('lista', {
+		// ... (attributes)
+	}, {
+		tableName: 'alunos'
+	});
+	
+	await sequelize.sync({ force: true });
+	console.log("All models were synchronized successfully.");	
+
+	await lista.drop();
+	console.log("User table dropped!");
 });
+//user=lista
+//users=alunos
